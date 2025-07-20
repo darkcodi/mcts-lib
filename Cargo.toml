@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = ["Ivan Yaremenchuk <trooper982@gmail.com>"]
 edition = "2024"
 description = "A small and simple library for Monte Carlo tree search"
-license = "MIT"
+license-file = "LICENSE"
 repository = "https://github.com/darkcodi/mcts-lib"
 keywords = [
     "mcts",
