@@ -18,11 +18,57 @@ pub const DEFAULT_NODE_CAPACITY: usize = 10000;
 
 impl<T: Board, K: RandomGenerator> Default for MonteCarloTreeSearch<T, K> {
     fn default() -> Self {
-        MonteCarloTreeSearch::new(T::default(), K::default(), DEFAULT_NODE_CAPACITY, true)
+        MonteCarloTreeSearchBuilder::new(T::default()).build()
+    }
+}
+
+pub struct MonteCarloTreeSearchBuilder<T: Board, K: RandomGenerator> {
+    board: T,
+    random_generator: K,
+    node_capacity: usize,
+    use_alpha_beta_pruning: bool,
+}
+
+impl<T: Board, K: RandomGenerator> MonteCarloTreeSearchBuilder<T, K> {
+    pub fn new(board: T) -> Self {
+        Self {
+            board,
+            random_generator: K::default(),
+            node_capacity: DEFAULT_NODE_CAPACITY,
+            use_alpha_beta_pruning: true,
+        }
+    }
+
+    pub fn with_random_generator(mut self, rg: K) -> Self {
+        self.random_generator = rg;
+        self
+    }
+
+    pub fn with_node_capacity(mut self, capacity: usize) -> Self {
+        self.node_capacity = capacity;
+        self
+    }
+
+    pub fn with_alpha_beta_pruning(mut self, use_abp: bool) -> Self {
+        self.use_alpha_beta_pruning = use_abp;
+        self
+    }
+
+    pub fn build(self) -> MonteCarloTreeSearch<T, K> {
+        MonteCarloTreeSearch::new(
+            self.board,
+            self.random_generator,
+            self.node_capacity,
+            self.use_alpha_beta_pruning,
+        )
     }
 }
 
 impl<T: Board, K: RandomGenerator> MonteCarloTreeSearch<T, K> {
+    pub fn builder(board: T) -> MonteCarloTreeSearchBuilder<T, K> {
+        MonteCarloTreeSearchBuilder::new(board)
+    }
+
     pub fn new(board: T, rg: K, node_capacity: usize, use_alpha_beta_pruning: bool) -> Self {
         let mut tree: Tree<MctsNode<T>> =
             TreeBuilder::new().with_node_capacity(node_capacity).build();

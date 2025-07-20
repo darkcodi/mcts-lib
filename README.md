@@ -39,7 +39,7 @@ To use this library, you need to implement the `Board` trait for your game's sta
     *   Determining the game's outcome (win, lose, draw, in-progress).
     *   Listing available moves.
     *   Applying a move to the board.
-3.  **Instantiate `MonteCarloTreeSearch`:** Create an instance of `MonteCarloTreeSearch` with your initial game state.
+3.  **Configure `MonteCarloTreeSearch`:** Use the `MonteCarloTreeSearch::builder()` to create and configure an instance of the search algorithm.
 4.  **Run the search:** Use `iterate_n_times` to run the MCTS algorithm.
 5.  **Get the best move:** Use `get_most_perspective_move` to get the best move found by the algorithm.
 
@@ -55,13 +55,12 @@ use mcts_lib::random::CustomNumberGenerator;
 // Create a new Tic-Tac-Toe board
 let board = TicTacToeBoard::default();
 
-// Create a new MCTS search instance
-let mut mcts = MonteCarloTreeSearch::new(
-    board,
-    CustomNumberGenerator::default(),
-    DEFAULT_NODE_CAPACITY,
-    true, // Use alpha-beta pruning
-);
+// Create and configure a new MCTS search instance using the builder
+let mut mcts = MonteCarloTreeSearch::builder(board)
+    .with_random_generator(CustomNumberGenerator::default())
+    .with_node_capacity(DEFAULT_NODE_CAPACITY)
+    .with_alpha_beta_pruning(true)
+    .build();
 
 // Run the search for 20,000 iterations
 mcts.iterate_n_times(20000);
