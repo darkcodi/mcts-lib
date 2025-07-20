@@ -1,15 +1,16 @@
-use rand::{random, Rng};
+use rand::{Rng, random};
 
 const MULTIPLIER_A: i64 = 1103515245;
 const INCREMENT_C: i64 = 12345;
 const DEFAULT_SEED: i64 = 3819201;
 
-pub trait RandomGenerator : Default {
+pub trait RandomGenerator: Default {
     fn next(&mut self) -> i32;
     fn next_range(&mut self, from: i32, to: i32) -> i32;
 
     fn get_random_from_vec<'a, K>(&mut self, vec: &'a Vec<K>) -> &'a K {
-        vec.get(self.next_range(0, vec.len() as i32) as usize).unwrap()
+        vec.get(self.next_range(0, vec.len() as i32) as usize)
+            .unwrap()
     }
 }
 
@@ -54,9 +55,7 @@ impl RandomGenerator for CustomNumberGenerator {
 
 impl CustomNumberGenerator {
     pub const fn new(seed: i64) -> Self {
-        Self {
-            seed
-        }
+        Self { seed }
     }
 }
 

@@ -1,10 +1,10 @@
-use std::borrow::Borrow;
-use id_tree::{Node, NodeId, Tree, TreeBuilder};
-use id_tree::InsertBehavior::{AsRoot, UnderNode};
 use crate::board::{Board, Bound, GameOutcome, Player};
 use crate::hash::MurMurHasher;
 use crate::mcts_node::MctsNode;
 use crate::random::RandomGenerator;
+use id_tree::InsertBehavior::{AsRoot, UnderNode};
+use id_tree::{Node, NodeId, Tree, TreeBuilder};
+use std::borrow::Borrow;
 
 pub struct MonteCarloTreeSearch<T: Board, K: RandomGenerator> {
     tree: Tree<MctsNode<T>>,
@@ -24,7 +24,8 @@ impl<T: Board, K: RandomGenerator> Default for MonteCarloTreeSearch<T, K> {
 
 impl<T: Board, K: RandomGenerator> MonteCarloTreeSearch<T, K> {
     pub fn new(board: T, rg: K, node_capacity: usize, use_alpha_beta_pruning: bool) -> Self {
-        let mut tree: Tree<MctsNode<T>> = TreeBuilder::new().with_node_capacity(node_capacity).build();
+        let mut tree: Tree<MctsNode<T>> =
+            TreeBuilder::new().with_node_capacity(node_capacity).build();
         let root_mcts_node = MctsNode::new(0, Box::new(board));
         let root_id = tree.insert(Node::new(root_mcts_node), AsRoot).unwrap();
 
@@ -54,32 +55,27 @@ impl<T: Board, K: RandomGenerator> MonteCarloTreeSearch<T, K> {
                 let maybe_selected_node = self.select_next_node(&R);
                 self.next_action = match maybe_selected_node {
                     None => MctsAction::EverythingIsCalculated,
-                    Some(selected_node) => MctsAction::Expansion {
-                        L: selected_node,
-                    },
+                    Some(selected_node) => MctsAction::Expansion { L: selected_node },
                 };
-            },
+            }
             MctsAction::Expansion { L } => {
                 let (children, selected_child) = self.expand_node(&L);
                 self.next_action = MctsAction::Simulation {
                     C: selected_child,
                     AC: children,
                 };
-            },
+            }
             MctsAction::Simulation { C, AC: _ac } => {
                 let outcome = self.simulate(&C);
-                self.next_action = MctsAction::Backpropagation {
-                    C,
-                    result: outcome,
-                };
-            },
+                self.next_action = MctsAction::Backpropagation { C, result: outcome };
+            }
             MctsAction::Backpropagation { C, result } => {
                 let affected_nodes = self.backpropagate(&C, result);
                 self.next_action = MctsAction::Selection {
                     R: self.root_id.clone(),
                     RP: affected_nodes,
                 }
-            },
+            }
             MctsAction::EverythingIsCalculated => {}
         }
     }
@@ -87,7 +83,8 @@ impl<T: Board, K: RandomGenerator> MonteCarloTreeSearch<T, K> {
     pub fn do_iteration(&mut self) -> Vec<NodeId> {
         self.execute_action();
         let mut is_selection = matches!(self.next_action, MctsAction::Selection { R: _, RP: _ });
-        let mut is_fully_calculated = matches!(self.next_action, MctsAction::EverythingIsCalculated);
+        let mut is_fully_calculated =
+            matches!(self.next_action, MctsAction::EverythingIsCalculated);
         while !is_selection && !is_fully_calculated {
             self.execute_action();
             is_selection = matches!(self.next_action, MctsAction::Selection { R: _, RP: _ });
@@ -141,8 +138,21 @@ impl<T: Board, K: RandomGenerator> MonteCarloTreeSearch<T, K> {
             GameOutcome::Lose => 2,
             GameOutcome::Draw => 3,
         };
-        let ifc = if node.data().is_fully_calculated { 1 } else { 0 };
-        let mut str = format!("[{}/{}/{}/{}/{}/{}/{};", node.data().id, node.data().height, node.data().wins, node.data().draws, node.data().visits, outcome, ifc);
+        let ifc = if node.data().is_fully_calculated {
+            1
+        } else {
+            0
+        };
+        let mut str = format!(
+            "[{}/{}/{}/{}/{}/{}/{};",
+            node.data().id,
+            node.data().height,
+            node.data().wins,
+            node.data().draws,
+            node.data().visits,
+            outcome,
+            ifc
+        );
         for child_id in node.children() {
             let child_hash = self.get_node_hash(child_id);
             str.push_str(child_hash.as_str());
@@ -164,7 +174,11 @@ impl<T: Board, K: RandomGenerator> MonteCarloTreeSearch<T, K> {
                     continue;
                 }
 
-                let current_ucb = MonteCarloTreeSearch::<T, K>::ucb_value(node.data().visits, child.data().wins, child.data().visits);
+                let current_ucb = MonteCarloTreeSearch::<T, K>::ucb_value(
+                    node.data().visits,
+                    child.data().wins,
+                    child.data().visits,
+                );
                 if current_ucb > max_ucb {
                     max_ucb = current_ucb;
                     best_child_id = Some(child_id);
@@ -214,11 +228,17 @@ impl<T: Board, K: RandomGenerator> MonteCarloTreeSearch<T, K> {
 
         let mut new_node_ids = Vec::with_capacity(new_mcts_nodes.len());
         for mcts_node in new_mcts_nodes {
-            let node_id = self.tree.insert(Node::new(mcts_node), UnderNode(node_id)).unwrap();
+            let node_id = self
+                .tree
+                .insert(Node::new(mcts_node), UnderNode(node_id))
+                .unwrap();
             new_node_ids.push(node_id);
         }
 
-        let selected_child = self.random.get_random_from_vec(self.tree.get(node_id).unwrap().children()).clone();
+        let selected_child = self
+            .random
+            .get_random_from_vec(self.tree.get(node_id).unwrap().children())
+            .clone();
         (new_node_ids, selected_child)
     }
 
@@ -238,8 +258,7 @@ impl<T: Board, K: RandomGenerator> MonteCarloTreeSearch<T, K> {
     fn backpropagate(&mut self, node_id: &NodeId, outcome: GameOutcome) -> Vec<NodeId> {
         let mut branch = vec![node_id.clone()];
 
-        loop
-        {
+        loop {
             let temp_node = self.tree.get(branch.last().unwrap()).unwrap();
             let parent = temp_node.parent();
             if parent.is_none() {
@@ -303,31 +322,39 @@ impl<T: Board, K: RandomGenerator> MonteCarloTreeSearch<T, K> {
 
         match mcts_node.current_player {
             Player::Me => {
-                if node.children().iter().all(|x|
-                    self.tree.get(x).unwrap().data().bound == Bound::DefoLose)
+                if node
+                    .children()
+                    .iter()
+                    .all(|x| self.tree.get(x).unwrap().data().bound == Bound::DefoLose)
                 {
                     return Bound::DefoLose;
                 }
 
-                if node.children().iter().any(|x|
-                    self.tree.get(x).unwrap().data().bound == Bound::DefoWin)
+                if node
+                    .children()
+                    .iter()
+                    .any(|x| self.tree.get(x).unwrap().data().bound == Bound::DefoWin)
                 {
                     return Bound::DefoWin;
                 }
-            },
+            }
             Player::Other => {
-                if node.children().iter().all(|x|
-                    self.tree.get(x).unwrap().data().bound == Bound::DefoWin)
+                if node
+                    .children()
+                    .iter()
+                    .all(|x| self.tree.get(x).unwrap().data().bound == Bound::DefoWin)
                 {
                     return Bound::DefoWin;
                 }
 
-                if node.children().iter().any(|x|
-                    self.tree.get(x).unwrap().data().bound == Bound::DefoLose)
+                if node
+                    .children()
+                    .iter()
+                    .any(|x| self.tree.get(x).unwrap().data().bound == Bound::DefoLose)
                 {
                     return Bound::DefoLose;
                 }
-            },
+            }
         }
 
         Bound::None
@@ -347,8 +374,10 @@ impl<T: Board, K: RandomGenerator> MonteCarloTreeSearch<T, K> {
             return false;
         }
 
-        let all_children_calculated = node.children().iter().all(|x|
-            self.tree.get(x).unwrap().data().is_fully_calculated);
+        let all_children_calculated = node
+            .children()
+            .iter()
+            .all(|x| self.tree.get(x).unwrap().data().is_fully_calculated);
 
         all_children_calculated
     }
@@ -358,31 +387,32 @@ impl<T: Board, K: RandomGenerator> MonteCarloTreeSearch<T, K> {
 
         if node_visit == 0 {
             i32::MAX.into()
-        }
-        else {
-            ((node_wins as f64) / (node_visit as f64)) + EXPLORATION_PARAMETER * f64::sqrt(f64::ln(total_visits as f64) / (node_visit as f64))
+        } else {
+            ((node_wins as f64) / (node_visit as f64))
+                + EXPLORATION_PARAMETER
+                    * f64::sqrt(f64::ln(total_visits as f64) / (node_visit as f64))
         }
     }
 }
 
 /*
-    Selection: Start from root R and select successive child nodes until a leaf node L is reached. The root is the current game state and a leaf is any node that has a potential child from which no simulation (playout) has yet been initiated. The section below says more about a way of biasing choice of child nodes that lets the game tree expand towards the most promising moves, which is the essence of Monte Carlo tree search.
-    Expansion: Unless L ends the game decisively (e.g. win/loss/draw) for either player, create one (or more) child nodes and choose node C from one of them. Child nodes are any valid moves from the game position defined by L.
-    Simulation: Complete one random playout from node C. This step is sometimes also called playout or rollout. A playout may be as simple as choosing uniform random moves until the game is decided (for example in chess, the game is won, lost, or drawn).
-    Backpropagation: Use the result of the playout to update information in the nodes on the path from C to R.
- */
+   Selection: Start from root R and select successive child nodes until a leaf node L is reached. The root is the current game state and a leaf is any node that has a potential child from which no simulation (playout) has yet been initiated. The section below says more about a way of biasing choice of child nodes that lets the game tree expand towards the most promising moves, which is the essence of Monte Carlo tree search.
+   Expansion: Unless L ends the game decisively (e.g. win/loss/draw) for either player, create one (or more) child nodes and choose node C from one of them. Child nodes are any valid moves from the game position defined by L.
+   Simulation: Complete one random playout from node C. This step is sometimes also called playout or rollout. A playout may be as simple as choosing uniform random moves until the game is decided (for example in chess, the game is won, lost, or drawn).
+   Backpropagation: Use the result of the playout to update information in the nodes on the path from C to R.
+*/
 #[allow(non_snake_case)]
 #[derive(Debug, PartialEq, Clone)]
 pub enum MctsAction {
     Selection {
-        R: NodeId, // Root
+        R: NodeId,       // Root
         RP: Vec<NodeId>, // RootPath
     },
     Expansion {
         L: NodeId,
     },
     Simulation {
-        C: NodeId, // Child
+        C: NodeId,       // Child
         AC: Vec<NodeId>, // AllChildren
     },
     Backpropagation {

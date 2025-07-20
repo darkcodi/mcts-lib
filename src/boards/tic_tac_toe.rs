@@ -1,5 +1,5 @@
-use std::fmt::{Debug};
 use crate::board::{Board, GameOutcome, Player};
+use std::fmt::Debug;
 
 pub struct TicTacToeBoard {
     root_player: TTTPlayer,
@@ -49,33 +49,44 @@ impl Board for TicTacToeBoard {
     }
 
     fn get_outcome(&self) -> GameOutcome {
-        if self.field[0].is_some() &&
-            (self.field[0] == self.field[1] && self.field[0] == self.field[2] ||
-            self.field[0] == self.field[3] && self.field[0] == self.field[6])
+        if self.field[0].is_some()
+            && (self.field[0] == self.field[1] && self.field[0] == self.field[2]
+                || self.field[0] == self.field[3] && self.field[0] == self.field[6])
         {
-            return if self.field[0].unwrap() == self.root_player { GameOutcome::Win } else { GameOutcome::Lose };
+            return if self.field[0].unwrap() == self.root_player {
+                GameOutcome::Win
+            } else {
+                GameOutcome::Lose
+            };
         }
 
-        if self.field[8].is_some() &&
-            (self.field[8] == self.field[2] && self.field[8] == self.field[5] ||
-            self.field[8] == self.field[6] && self.field[8] == self.field[7])
+        if self.field[8].is_some()
+            && (self.field[8] == self.field[2] && self.field[8] == self.field[5]
+                || self.field[8] == self.field[6] && self.field[8] == self.field[7])
         {
-            return if self.field[8].unwrap() == self.root_player { GameOutcome::Win } else { GameOutcome::Lose };
+            return if self.field[8].unwrap() == self.root_player {
+                GameOutcome::Win
+            } else {
+                GameOutcome::Lose
+            };
         }
 
-        if self.field[4].is_some() &&
-            (self.field[4] == self.field[1] && self.field[4] == self.field[7] ||
-                self.field[4] == self.field[3] && self.field[4] == self.field[5] ||
-                self.field[4] == self.field[0] && self.field[4] == self.field[8] ||
-                self.field[4] == self.field[2] && self.field[4] == self.field[6])
+        if self.field[4].is_some()
+            && (self.field[4] == self.field[1] && self.field[4] == self.field[7]
+                || self.field[4] == self.field[3] && self.field[4] == self.field[5]
+                || self.field[4] == self.field[0] && self.field[4] == self.field[8]
+                || self.field[4] == self.field[2] && self.field[4] == self.field[6])
         {
-            return if self.field[4].unwrap() == self.root_player { GameOutcome::Win } else { GameOutcome::Lose };
+            return if self.field[4].unwrap() == self.root_player {
+                GameOutcome::Win
+            } else {
+                GameOutcome::Lose
+            };
         }
 
         if self.field.iter().any(|x| x.is_none()) {
             GameOutcome::InProgress
-        }
-        else {
+        } else {
             GameOutcome::Draw
         }
     }
@@ -85,8 +96,12 @@ impl Board for TicTacToeBoard {
             return Vec::new();
         }
 
-        self.field.iter().enumerate().filter(|(_, x)| x.is_none())
-            .map(|(i, _)| i as u8).collect()
+        self.field
+            .iter()
+            .enumerate()
+            .filter(|(_, x)| x.is_none())
+            .map(|(i, _)| i as u8)
+            .collect()
     }
 
     fn perform_move(&mut self, b_move: &Self::Move) {
@@ -108,14 +123,19 @@ enum TTTPlayer {
 #[cfg(test)]
 mod tests {
     use crate::boards::tic_tac_toe::TicTacToeBoard;
-    use crate::mcts::{MonteCarloTreeSearch, DEFAULT_NODE_CAPACITY};
+    use crate::mcts::{DEFAULT_NODE_CAPACITY, MonteCarloTreeSearch};
     use crate::random::CustomNumberGenerator;
 
     #[test]
     fn test1_usual() {
         // arrange
         let board = TicTacToeBoard::default();
-        let mut mcts = MonteCarloTreeSearch::new(board, CustomNumberGenerator::default(), DEFAULT_NODE_CAPACITY, false);
+        let mut mcts = MonteCarloTreeSearch::new(
+            board,
+            CustomNumberGenerator::default(),
+            DEFAULT_NODE_CAPACITY,
+            false,
+        );
 
         // act
         mcts.iterate_n_times(20000);
@@ -128,14 +148,22 @@ mod tests {
         assert_eq!(root.draws, 2104);
         assert_eq!(root.visits, 20000);
         assert!(!root.is_fully_calculated);
-        assert_eq!(mcts.get_tree_hash().as_str(), "48f4fc98f9d30536b3dee9f65bc81186");
+        assert_eq!(
+            mcts.get_tree_hash().as_str(),
+            "48f4fc98f9d30536b3dee9f65bc81186"
+        );
     }
 
     #[test]
     fn test2_abp() {
         // arrange
         let board = TicTacToeBoard::default();
-        let mut mcts = MonteCarloTreeSearch::new(board, CustomNumberGenerator::default(), DEFAULT_NODE_CAPACITY, true);
+        let mut mcts = MonteCarloTreeSearch::new(
+            board,
+            CustomNumberGenerator::default(),
+            DEFAULT_NODE_CAPACITY,
+            true,
+        );
 
         // act
         mcts.iterate_n_times(20000);
@@ -148,14 +176,22 @@ mod tests {
         assert_eq!(root.draws, 3808);
         assert_eq!(root.visits, 20000);
         assert!(!root.is_fully_calculated);
-        assert_eq!(mcts.get_tree_hash().as_str(), "61bd1b564d0c5e7934603b807fd74d7c");
+        assert_eq!(
+            mcts.get_tree_hash().as_str(),
+            "61bd1b564d0c5e7934603b807fd74d7c"
+        );
     }
 
     #[test]
     fn test3_abp_fully_calculated() {
         // arrange
         let board = TicTacToeBoard::default();
-        let mut mcts = MonteCarloTreeSearch::new(board, CustomNumberGenerator::default(), DEFAULT_NODE_CAPACITY, true);
+        let mut mcts = MonteCarloTreeSearch::new(
+            board,
+            CustomNumberGenerator::default(),
+            DEFAULT_NODE_CAPACITY,
+            true,
+        );
 
         // act
         mcts.iterate_n_times(50000);
@@ -168,14 +204,22 @@ mod tests {
         assert_eq!(root.draws, 10342);
         assert_eq!(root.visits, 37432);
         assert!(root.is_fully_calculated);
-        assert_eq!(mcts.get_tree_hash().as_str(), "acd053fc9799a2c66a76080550c0b9d9");
+        assert_eq!(
+            mcts.get_tree_hash().as_str(),
+            "acd053fc9799a2c66a76080550c0b9d9"
+        );
     }
 
     #[test]
     fn test5_change_root() {
         // arrange
         let board = TicTacToeBoard::default();
-        let mut mcts = MonteCarloTreeSearch::new(board, CustomNumberGenerator::default(), DEFAULT_NODE_CAPACITY, true);
+        let mut mcts = MonteCarloTreeSearch::new(
+            board,
+            CustomNumberGenerator::default(),
+            DEFAULT_NODE_CAPACITY,
+            true,
+        );
 
         // // act
         // mcts.iterate_n_times(5000);

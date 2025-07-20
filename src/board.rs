@@ -1,4 +1,4 @@
-pub trait Board : Default + Clone {
+pub trait Board: Default + Clone {
     type Move;
 
     fn get_current_player(&self) -> Player;
