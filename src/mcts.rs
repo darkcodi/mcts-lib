@@ -6,6 +6,9 @@ use id_tree::InsertBehavior::{AsRoot, UnderNode};
 use id_tree::{Node, NodeId, Tree, TreeBuilder};
 use std::borrow::Borrow;
 
+/// The main struct for running the Monte Carlo Tree Search algorithm.
+///
+/// It holds the search tree, the random number generator, and the configuration for the search.
 pub struct MonteCarloTreeSearch<T: Board, K: RandomGenerator> {
     tree: Tree<MctsNode<T>>,
     root_id: NodeId,
@@ -14,6 +17,7 @@ pub struct MonteCarloTreeSearch<T: Board, K: RandomGenerator> {
     next_action: MctsAction,
 }
 
+/// The default capacity for the number of nodes in the MCTS tree.
 pub const DEFAULT_NODE_CAPACITY: usize = 10000;
 
 impl<T: Board, K: RandomGenerator> Default for MonteCarloTreeSearch<T, K> {
@@ -22,6 +26,9 @@ impl<T: Board, K: RandomGenerator> Default for MonteCarloTreeSearch<T, K> {
     }
 }
 
+/// A builder for creating instances of `MonteCarloTreeSearch`.
+///
+/// This provides a convenient way to configure the MCTS search with different parameters.
 pub struct MonteCarloTreeSearchBuilder<T: Board, K: RandomGenerator> {
     board: T,
     random_generator: K,
@@ -30,6 +37,7 @@ pub struct MonteCarloTreeSearchBuilder<T: Board, K: RandomGenerator> {
 }
 
 impl<T: Board, K: RandomGenerator> MonteCarloTreeSearchBuilder<T, K> {
+    /// Creates a new builder with the given initial board state.
     pub fn new(board: T) -> Self {
         Self {
             board,
@@ -39,21 +47,25 @@ impl<T: Board, K: RandomGenerator> MonteCarloTreeSearchBuilder<T, K> {
         }
     }
 
+    /// Sets the random number generator for the MCTS search.
     pub fn with_random_generator(mut self, rg: K) -> Self {
         self.random_generator = rg;
         self
     }
 
+    /// Sets the maximum number of nodes that the search tree can hold.
     pub fn with_node_capacity(mut self, capacity: usize) -> Self {
         self.node_capacity = capacity;
         self
     }
 
+    /// Enables or disables alpha-beta pruning.
     pub fn with_alpha_beta_pruning(mut self, use_abp: bool) -> Self {
         self.use_alpha_beta_pruning = use_abp;
         self
     }
 
+    /// Builds the `MonteCarloTreeSearch` instance with the configured parameters.
     pub fn build(self) -> MonteCarloTreeSearch<T, K> {
         MonteCarloTreeSearch::new(
             self.board,
@@ -65,10 +77,14 @@ impl<T: Board, K: RandomGenerator> MonteCarloTreeSearchBuilder<T, K> {
 }
 
 impl<T: Board, K: RandomGenerator> MonteCarloTreeSearch<T, K> {
+    /// Returns a new builder for `MonteCarloTreeSearch`.
     pub fn builder(board: T) -> MonteCarloTreeSearchBuilder<T, K> {
         MonteCarloTreeSearchBuilder::new(board)
     }
 
+    /// Creates a new `MonteCarloTreeSearch` instance.
+    ///
+    /// It is recommended to use the builder pattern via `MonteCarloTreeSearch::builder()` instead.
     pub fn new(board: T, rg: K, node_capacity: usize, use_alpha_beta_pruning: bool) -> Self {
         let mut tree: Tree<MctsNode<T>> =
             TreeBuilder::new().with_node_capacity(node_capacity).build();
@@ -87,14 +103,17 @@ impl<T: Board, K: RandomGenerator> MonteCarloTreeSearch<T, K> {
         }
     }
 
+    /// Returns an immutable reference to the underlying search tree.
     pub fn get_tree(&self) -> &Tree<MctsNode<T>> {
         &self.tree
     }
 
+    /// Returns the next MCTS action to be performed. Useful for debugging and visualization.
     pub fn get_next_mcts_action(&self) -> &MctsAction {
         &self.next_action
     }
 
+    /// Executes a single step of the MCTS algorithm (Selection, Expansion, Simulation, or Backpropagation).
     pub fn execute_action(&mut self) {
         match self.next_action.clone() {
             MctsAction::Selection { R, RP: _cr } => {
@@ -126,6 +145,8 @@ impl<T: Board, K: RandomGenerator> MonteCarloTreeSearch<T, K> {
         }
     }
 
+    /// Performs one full iteration of the MCTS algorithm (Selection, Expansion, Simulation, Backpropagation).
+    /// Returns the path of nodes that were updated during backpropagation.
     pub fn do_iteration(&mut self) -> Vec<NodeId> {
         self.execute_action();
         let mut is_selection = matches!(self.next_action, MctsAction::Selection { R: _, RP: _ });
@@ -143,6 +164,7 @@ impl<T: Board, K: RandomGenerator> MonteCarloTreeSearch<T, K> {
         }
     }
 
+    /// Runs the MCTS search for a specified number of iterations.
     pub fn iterate_n_times(&mut self, n: u32) {
         let mut iteration = 0;
         while iteration < n {
@@ -151,11 +173,13 @@ impl<T: Board, K: RandomGenerator> MonteCarloTreeSearch<T, K> {
         }
     }
 
+    /// Returns a reference to the root node of the search tree.
     pub fn get_root(&self) -> &Node<MctsNode<T>> {
         let root = self.tree.get(self.root_id.borrow()).unwrap();
         root
     }
 
+    /// Returns the child of the root node that is considered the most promising, based on win rate.
     pub fn get_most_perspective_move(&self) -> &Node<MctsNode<T>> {
         let root = self.tree.get(self.root_id.borrow()).unwrap();
         let mut max_win_rate = 0.0;
@@ -172,10 +196,12 @@ impl<T: Board, K: RandomGenerator> MonteCarloTreeSearch<T, K> {
         best_node
     }
 
+    /// Generates a hash of the entire MCTS tree for debugging and verification purposes.
     pub fn get_tree_hash(&self) -> String {
         self.get_node_hash(&self.root_id)
     }
 
+    /// Recursively generates a hash for a given node and its descendants.
     pub fn get_node_hash(&self, node_id: &NodeId) -> String {
         let node = self.tree.get(node_id).unwrap();
         let outcome = match node.data().outcome {
@@ -207,6 +233,7 @@ impl<T: Board, K: RandomGenerator> MonteCarloTreeSearch<T, K> {
         MurMurHasher::hash(str.as_str())
     }
 
+    /// Selects the most promising node to expand, using the UCB1 formula.
     fn select_next_node(&self, root_id: &NodeId) -> Option<NodeId> {
         let mut promising_node_id = &root_id.clone();
         let mut has_changed = false;
@@ -249,6 +276,7 @@ impl<T: Board, K: RandomGenerator> MonteCarloTreeSearch<T, K> {
         }
     }
 
+    /// Expands a leaf node by creating its children, representing all possible moves from that state.
     fn expand_node(&mut self, node_id: &NodeId) -> (Vec<NodeId>, NodeId) {
         let node = self.tree.get(node_id).unwrap();
         if !node.children().is_empty() {
@@ -288,6 +316,7 @@ impl<T: Board, K: RandomGenerator> MonteCarloTreeSearch<T, K> {
         (new_node_ids, selected_child)
     }
 
+    /// Simulates a random playout from a given node until the game ends.
     fn simulate(&mut self, node_id: &NodeId) -> GameOutcome {
         let node = self.tree.get(node_id).unwrap();
         let mut board = node.data().board.clone();
@@ -301,6 +330,7 @@ impl<T: Board, K: RandomGenerator> MonteCarloTreeSearch<T, K> {
         outcome
     }
 
+    /// Propagates the result of a simulation back up the tree, updating node statistics.
     fn backpropagate(&mut self, node_id: &NodeId, outcome: GameOutcome) -> Vec<NodeId> {
         let mut branch = vec![node_id.clone()];
 
@@ -343,6 +373,7 @@ impl<T: Board, K: RandomGenerator> MonteCarloTreeSearch<T, K> {
         branch
     }
 
+    /// Determines the bound of a node for alpha-beta pruning.
     fn get_bound(&self, node_id: &NodeId) -> Bound {
         if !self.use_alpha_beta_pruning {
             return Bound::None;
@@ -406,6 +437,7 @@ impl<T: Board, K: RandomGenerator> MonteCarloTreeSearch<T, K> {
         Bound::None
     }
 
+    /// Checks if a node can be considered fully calculated, meaning its outcome is certain.
     fn is_fully_calculated(&self, node_id: &NodeId, bound: Bound) -> bool {
         if bound != Bound::None {
             return true;
@@ -428,6 +460,7 @@ impl<T: Board, K: RandomGenerator> MonteCarloTreeSearch<T, K> {
         all_children_calculated
     }
 
+    /// Calculates the UCB1 (Upper Confidence Bound 1) value for a node.
     fn ucb_value(total_visits: i32, node_wins: i32, node_visit: i32) -> f64 {
         const EXPLORATION_PARAMETER: f64 = std::f64::consts::SQRT_2;
 
@@ -441,34 +474,44 @@ impl<T: Board, K: RandomGenerator> MonteCarloTreeSearch<T, K> {
     }
 }
 
-/*
-   Selection: Start from root R and select successive child nodes until a leaf node L is reached. The root is the current game state and a leaf is any node that has a potential child from which no simulation (playout) has yet been initiated. The section below says more about a way of biasing choice of child nodes that lets the game tree expand towards the most promising moves, which is the essence of Monte Carlo tree search.
-   Expansion: Unless L ends the game decisively (e.g. win/loss/draw) for either player, create one (or more) child nodes and choose node C from one of them. Child nodes are any valid moves from the game position defined by L.
-   Simulation: Complete one random playout from node C. This step is sometimes also called playout or rollout. A playout may be as simple as choosing uniform random moves until the game is decided (for example in chess, the game is won, lost, or drawn).
-   Backpropagation: Use the result of the playout to update information in the nodes on the path from C to R.
-*/
+/// Represents the four main stages of the MCTS algorithm.
+///
+/// This enum is used to manage the state of the search process.
 #[allow(non_snake_case)]
 #[derive(Debug, PartialEq, Clone)]
 pub enum MctsAction {
+    /// **Selection**: Start from the root `R` and select successive child nodes until a leaf node `L` is reached.
     Selection {
-        R: NodeId,       // Root
-        RP: Vec<NodeId>, // RootPath
+        /// The root of the current selection phase.
+        R: NodeId,
+        /// The path of nodes visited during the last backpropagation phase.
+        RP: Vec<NodeId>,
     },
+    /// **Expansion**: Create one or more child nodes from the selected leaf node `L`.
     Expansion {
+        /// The leaf node to be expanded.
         L: NodeId,
     },
+    /// **Simulation**: Run a random playout from a newly created child node `C`.
     Simulation {
-        C: NodeId,       // Child
-        AC: Vec<NodeId>, // AllChildren
-    },
-    Backpropagation {
+        /// The child node from which the simulation will start.
         C: NodeId,
+        /// All children created during the expansion phase.
+        AC: Vec<NodeId>,
+    },
+    /// **Backpropagation**: Update the statistics of the nodes on the path from `C` to the root `R`.
+    Backpropagation {
+        /// The child node from which the simulation was run.
+        C: NodeId,
+        /// The result of the simulation.
         result: GameOutcome,
     },
+    /// Represents a state where the entire tree has been explored and the outcome is certain.
     EverythingIsCalculated,
 }
 
 impl MctsAction {
+    /// Returns the name of the current MCTS action as a string.
     pub fn get_name(&self) -> String {
         match self {
             MctsAction::Selection { R: _, RP: _ } => "Selection".to_string(),

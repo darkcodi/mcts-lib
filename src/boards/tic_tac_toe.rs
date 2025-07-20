@@ -1,6 +1,10 @@
 use crate::board::{Board, GameOutcome, Player};
 use std::fmt::Debug;
 
+/// An implementation of the `Board` trait for the game of Tic-Tac-Toe.
+///
+/// The board is represented by a 9-element array, where each element corresponds to a cell.
+/// A move is represented by a `u8` from 0 to 8.
 pub struct TicTacToeBoard {
     root_player: TTTPlayer,
     current_player: TTTPlayer,
@@ -20,6 +24,7 @@ impl TicTacToeBoard {
 }
 
 impl Default for TicTacToeBoard {
+    /// Creates a new Tic-Tac-Toe board with player 'X' starting.
     fn default() -> Self {
         TicTacToeBoard::new(TTTPlayer::X)
     }
@@ -123,7 +128,7 @@ enum TTTPlayer {
 #[cfg(test)]
 mod tests {
     use crate::boards::tic_tac_toe::TicTacToeBoard;
-    use crate::mcts::MonteCarloTreeSearch;
+    use crate::mcts::{DEFAULT_NODE_CAPACITY, MonteCarloTreeSearch};
     use crate::random::CustomNumberGenerator;
 
     #[test]
@@ -133,6 +138,7 @@ mod tests {
         let mut mcts = MonteCarloTreeSearch::builder(board)
             .with_alpha_beta_pruning(false)
             .with_random_generator(CustomNumberGenerator::default())
+            .with_node_capacity(DEFAULT_NODE_CAPACITY)
             .build();
 
         // act
@@ -158,6 +164,7 @@ mod tests {
         let board = TicTacToeBoard::default();
         let mut mcts = MonteCarloTreeSearch::builder(board)
             .with_random_generator(CustomNumberGenerator::default())
+            .with_node_capacity(DEFAULT_NODE_CAPACITY)
             .build();
 
         // act
@@ -183,6 +190,7 @@ mod tests {
         let board = TicTacToeBoard::default();
         let mut mcts = MonteCarloTreeSearch::builder(board)
             .with_random_generator(CustomNumberGenerator::default())
+            .with_node_capacity(DEFAULT_NODE_CAPACITY)
             .build();
 
         // act
@@ -200,5 +208,32 @@ mod tests {
             mcts.get_tree_hash().as_str(),
             "acd053fc9799a2c66a76080550c0b9d9"
         );
+    }
+
+    #[test]
+    fn test5_change_root() {
+        // arrange
+        let board = TicTacToeBoard::default();
+        let _mcts = MonteCarloTreeSearch::builder(board)
+            .with_random_generator(CustomNumberGenerator::default())
+            .with_node_capacity(DEFAULT_NODE_CAPACITY)
+            .build();
+
+        // // act
+        // mcts.iterate_n_times(5000);
+        // mcts.change_root(mcts.get_most_perspective_move().id);
+        // mcts.iterate_n_times(5000);
+        // mcts.change_root(mcts.get_least_perspective_move().id);
+        // mcts.iterate_n_times(5000);
+        //
+        // // assert
+        // let best_node = &mcts.get_most_perspective_move().data;
+        // assert_eq!(best_node.prev_move.unwrap(), 4);
+        // let root = &mcts.get_root().data;
+        // assert_eq!(root.wins, 18225);
+        // assert_eq!(root.draws, 10342);
+        // assert_eq!(root.visits, 37432);
+        // assert!(root.is_fully_calculated);
+        // assert_eq!(mcts.get_tree_hash().as_str(), "9c7aa29b5a0ecdd4e5b4cdc14ff41237");
     }
 }
