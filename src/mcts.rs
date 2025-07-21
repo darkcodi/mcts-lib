@@ -4,6 +4,7 @@ use crate::random::{RandomGenerator, StandardRandomGenerator};
 use id_tree::InsertBehavior::{AsRoot, UnderNode};
 use id_tree::{Node, NodeId, Tree, TreeBuilder};
 use std::borrow::Borrow;
+use std::collections::HashSet;
 
 /// The main struct for running the Monte Carlo Tree Search algorithm.
 ///
@@ -258,10 +259,9 @@ impl<T: Board, K: RandomGenerator> MonteCarloTreeSearch<T, K> {
             new_node_ids.push(node_id);
         }
 
-        let selected_child = self
-            .random
-            .get_random_from_vec(self.tree.get(node_id).unwrap().children())
-            .clone();
+        let children = self.tree.get(node_id).unwrap().children();
+        let selected_child_index = self.random.next_range(0, children.len() as i32) as usize;
+        let selected_child = children[selected_child_index].clone();
         (new_node_ids, selected_child)
     }
 
@@ -270,10 +270,32 @@ impl<T: Board, K: RandomGenerator> MonteCarloTreeSearch<T, K> {
         let node = self.tree.get(node_id).unwrap();
         let mut board = node.data().board.clone();
         let mut outcome = board.get_outcome();
+        let mut visited_states = HashSet::new();
+        visited_states.insert(board.get_hash());
+
         while outcome == GameOutcome::InProgress {
-            let all_possible_moves = board.get_available_moves();
-            let random_move = self.random.get_random_from_vec(&all_possible_moves);
-            board.perform_move(random_move);
+            let mut all_possible_moves = board.get_available_moves();
+
+            while !all_possible_moves.is_empty() {
+                let random_move_index = self.random.next_range(0, all_possible_moves.len() as i32) as usize;
+                let random_move = all_possible_moves.get(random_move_index).unwrap();
+                let mut new_board = board.clone();
+                new_board.perform_move(random_move);
+                let new_board_hash = new_board.get_hash();
+                if visited_states.contains(&new_board_hash) {
+                    all_possible_moves.remove(random_move_index);
+                    continue;
+                } else {
+                    visited_states.insert(new_board_hash);
+                    board = new_board;
+                    break;
+                }
+            }
+
+            if all_possible_moves.is_empty() {
+                return GameOutcome::Draw;
+            }
+
             outcome = board.get_outcome();
         }
         outcome
