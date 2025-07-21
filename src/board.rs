@@ -18,6 +18,9 @@ pub trait Board: Default + Clone {
 
     /// Applies a given move to the board, modifying its state.
     fn perform_move(&mut self, b_move: &Self::Move);
+
+    /// Returns a hash value for the current board state.
+    fn get_hash(&self) -> u128;
 }
 
 /// Represents the possible outcomes of a game.

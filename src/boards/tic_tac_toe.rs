@@ -117,6 +117,19 @@ impl Board for TicTacToeBoard {
         };
         self.outcome = self.get_outcome();
     }
+
+    fn get_hash(&self) -> u128 {
+        let mut hash = 0;
+        for (i, &cell) in self.field.iter().enumerate() {
+            let cell_value = match cell {
+                None => 0,
+                Some(TTTPlayer::X) => 1,
+                Some(TTTPlayer::O) => 2,
+            };
+            hash += cell_value * 3u128.pow(i as u32);
+        }
+        hash
+    }
 }
 
 #[derive(Debug, PartialEq, Copy, Clone)]
