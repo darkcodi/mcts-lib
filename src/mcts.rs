@@ -16,9 +16,6 @@ pub struct MonteCarloTreeSearch<T: Board, K: RandomGenerator> {
     next_action: MctsAction,
 }
 
-/// The default capacity for the number of nodes in the MCTS tree.
-pub const DEFAULT_NODE_CAPACITY: usize = 10000;
-
 impl<T: Board, K: RandomGenerator> Default for MonteCarloTreeSearch<T, K> {
     fn default() -> Self {
         MonteCarloTreeSearchBuilder::new(T::default()).build()
@@ -31,7 +28,6 @@ impl<T: Board, K: RandomGenerator> Default for MonteCarloTreeSearch<T, K> {
 pub struct MonteCarloTreeSearchBuilder<T: Board, K: RandomGenerator> {
     board: T,
     random_generator: K,
-    node_capacity: usize,
     use_alpha_beta_pruning: bool,
 }
 
@@ -41,7 +37,6 @@ impl<T: Board, K: RandomGenerator> MonteCarloTreeSearchBuilder<T, K> {
         Self {
             board,
             random_generator: K::default(),
-            node_capacity: DEFAULT_NODE_CAPACITY,
             use_alpha_beta_pruning: true,
         }
     }
@@ -49,12 +44,6 @@ impl<T: Board, K: RandomGenerator> MonteCarloTreeSearchBuilder<T, K> {
     /// Sets the random number generator for the MCTS search.
     pub fn with_random_generator(mut self, rg: K) -> Self {
         self.random_generator = rg;
-        self
-    }
-
-    /// Sets the maximum number of nodes that the search tree can hold.
-    pub fn with_node_capacity(mut self, capacity: usize) -> Self {
-        self.node_capacity = capacity;
         self
     }
 
@@ -69,7 +58,6 @@ impl<T: Board, K: RandomGenerator> MonteCarloTreeSearchBuilder<T, K> {
         MonteCarloTreeSearch::new(
             self.board,
             self.random_generator,
-            self.node_capacity,
             self.use_alpha_beta_pruning,
         )
     }
@@ -84,9 +72,8 @@ impl<T: Board, K: RandomGenerator> MonteCarloTreeSearch<T, K> {
     /// Creates a new `MonteCarloTreeSearch` instance.
     ///
     /// It is recommended to use the builder pattern via `MonteCarloTreeSearch::builder()` instead.
-    pub fn new(board: T, rg: K, node_capacity: usize, use_alpha_beta_pruning: bool) -> Self {
-        let mut tree: Tree<MctsNode<T>> =
-            TreeBuilder::new().with_node_capacity(node_capacity).build();
+    pub fn new(board: T, rg: K, use_alpha_beta_pruning: bool) -> Self {
+        let mut tree: Tree<MctsNode<T>> = TreeBuilder::new().build();
         let root_mcts_node = MctsNode::new(0, Box::new(board));
         let root_id = tree.insert(Node::new(root_mcts_node), AsRoot).unwrap();
 

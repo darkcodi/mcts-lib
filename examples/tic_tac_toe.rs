@@ -177,7 +177,7 @@ enum TTTPlayer {
 #[cfg(test)]
 mod tests {
     use crate::TicTacToeBoard;
-    use mcts_lib::mcts::{DEFAULT_NODE_CAPACITY, MonteCarloTreeSearch};
+    use mcts_lib::mcts::MonteCarloTreeSearch;
     use mcts_lib::random::CustomNumberGenerator;
 
     #[test]
@@ -187,7 +187,6 @@ mod tests {
         let mut mcts = MonteCarloTreeSearch::builder(board)
             .with_alpha_beta_pruning(false)
             .with_random_generator(CustomNumberGenerator::default())
-            .with_node_capacity(DEFAULT_NODE_CAPACITY)
             .build();
 
         // act
@@ -209,7 +208,6 @@ mod tests {
         let board = TicTacToeBoard::default();
         let mut mcts = MonteCarloTreeSearch::builder(board)
             .with_random_generator(CustomNumberGenerator::default())
-            .with_node_capacity(DEFAULT_NODE_CAPACITY)
             .build();
 
         // act
@@ -231,7 +229,6 @@ mod tests {
         let board = TicTacToeBoard::default();
         let mut mcts = MonteCarloTreeSearch::builder(board)
             .with_random_generator(CustomNumberGenerator::default())
-            .with_node_capacity(DEFAULT_NODE_CAPACITY)
             .build();
 
         // act
