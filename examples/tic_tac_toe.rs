@@ -175,6 +175,7 @@ enum TTTPlayer {
 }
 
 #[cfg(test)]
+#[allow(unused_imports)]
 mod tests {
     use crate::TicTacToeBoard;
     use mcts_lib::mcts::MonteCarloTreeSearch;

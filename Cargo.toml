@@ -21,3 +21,9 @@ categories = [
 [dependencies]
 id_tree = "1.8"
 rand = "0.9"
+
+[[example]]
+name = "tic_tac_toe"
+path = "examples/tic_tac_toe.rs"
+test = true
+harness = false

@@ -15,7 +15,7 @@ This document provides a high-level overview of the `mcts-lib` project, generate
 
 The project is structured into several modules, each with a specific responsibility:
 
-- **`mcts`**: This is the heart of the library, containing the `MonteCarloTreeSearch` struct. This struct orchestrates the four main steps of the MCTS algorithm:
+- **`mcts`**: This is the heart of the library, containing the `MonteCarloTreeSearch` struct and its builder. This struct orchestrates the four main steps of the MCTS algorithm:
     1.  **Selection:** Traversing the tree to find a promising node.
     2.  **Expansion:** Adding new nodes to the tree.
     3.  **Simulation:** Running a random playout from a new node.
@@ -26,14 +26,15 @@ The project is structured into several modules, each with a specific responsibil
     - Determining the game's outcome (win, loss, draw, or in-progress).
     - Listing available moves.
     - Applying a move to the board.
+    - Getting a hash of the current board state.
 
 - **`mcts_node`**: This module defines the `MctsNode` struct, which represents a single node in the search tree. Each node stores information about a specific game state, including visit counts, win/draw statistics, and the move that led to this state.
 
-- **`boards`**: This module contains concrete implementations of the `Board` trait for specific games. Currently, it includes an implementation for **Tic-Tac-Toe**, which also serves as a good example of how to use the library.
+- **`random`**: This module provides a trait for random number generation, which is crucial for the simulation phase of the MCTS algorithm. It includes two implementations: `StandardRandomGenerator` which uses the `rand` crate, and `CustomNumberGenerator` which is a deterministic pseudo-random number generator useful for testing.
 
-- **`random`**: This module provides a trait for random number generation, which is crucial for the simulation phase of the MCTS algorithm.
+## Examples
 
-- **`hash`**: This module contains a utility for hashing the MCTS tree, which can be useful for debugging and testing.
+The `examples` directory contains a complete implementation of a Tic-Tac-Toe game using the `mcts-lib`. This serves as a practical guide on how to integrate a game with the library.
 
 ## How to Use
 
@@ -41,7 +42,7 @@ To use this library in your own project, you would typically follow these steps:
 
 1.  **Define your game state:** Create a struct or enum that represents the state of your game.
 2.  **Implement the `Board` trait:** Implement the `Board` trait for your game state struct. This will involve defining the logic for making moves, checking for game termination, and identifying the current player.
-3.  **Instantiate `MonteCarloTreeSearch`:** Create an instance of the `MonteCarloTreeSearch` struct, providing it with an initial game state.
+3.  **Instantiate `MonteCarloTreeSearch`:** Create an instance of the `MonteCarloTreeSearch` struct using the builder pattern, providing it with an initial game state.
 4.  **Run the search:** Call the `iterate_n_times` method to run the MCTS algorithm for a specified number of iterations.
 5.  **Get the best move:** Use the `get_most_perspective_move` method to retrieve the move that the MCTS algorithm has identified as the most promising.
 
