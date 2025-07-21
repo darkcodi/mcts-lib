@@ -152,10 +152,6 @@ mod tests {
         assert_eq!(root.draws, 2104);
         assert_eq!(root.visits, 20000);
         assert!(!root.is_fully_calculated);
-        assert_eq!(
-            mcts.get_tree_hash().as_str(),
-            "48f4fc98f9d30536b3dee9f65bc81186"
-        );
     }
 
     #[test]
@@ -178,10 +174,6 @@ mod tests {
         assert_eq!(root.draws, 3808);
         assert_eq!(root.visits, 20000);
         assert!(!root.is_fully_calculated);
-        assert_eq!(
-            mcts.get_tree_hash().as_str(),
-            "61bd1b564d0c5e7934603b807fd74d7c"
-        );
     }
 
     #[test]
@@ -204,10 +196,6 @@ mod tests {
         assert_eq!(root.draws, 10342);
         assert_eq!(root.visits, 37432);
         assert!(root.is_fully_calculated);
-        assert_eq!(
-            mcts.get_tree_hash().as_str(),
-            "acd053fc9799a2c66a76080550c0b9d9"
-        );
     }
 
     #[test]

@@ -35,8 +35,6 @@
 pub mod board;
 /// Contains pre-made implementations of the `Board` trait for common games.
 pub mod boards;
-/// Contains hashing utilities for the MCTS tree.
-pub mod hash;
 /// The core module of the library, containing the `MonteCarloTreeSearch` implementation.
 pub mod mcts;
 /// Contains the `MctsNode` struct, which represents a node in the search tree.

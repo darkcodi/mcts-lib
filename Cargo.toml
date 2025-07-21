@@ -19,7 +19,6 @@ categories = [
 ]
 
 [dependencies]
-fastmurmur3 = "0.2"
 id_tree = "1.8"
 rand = "0.8"
 uuid = "1.5"

@@ -1,5 +1,4 @@
 use crate::board::{Board, Bound, GameOutcome, Player};
-use crate::hash::MurMurHasher;
 use crate::mcts_node::MctsNode;
 use crate::random::RandomGenerator;
 use id_tree::InsertBehavior::{AsRoot, UnderNode};
@@ -194,43 +193,6 @@ impl<T: Board, K: RandomGenerator> MonteCarloTreeSearch<T, K> {
         }
 
         best_node
-    }
-
-    /// Generates a hash of the entire MCTS tree for debugging and verification purposes.
-    pub fn get_tree_hash(&self) -> String {
-        self.get_node_hash(&self.root_id)
-    }
-
-    /// Recursively generates a hash for a given node and its descendants.
-    pub fn get_node_hash(&self, node_id: &NodeId) -> String {
-        let node = self.tree.get(node_id).unwrap();
-        let outcome = match node.data().outcome {
-            GameOutcome::InProgress => 0,
-            GameOutcome::Win => 1,
-            GameOutcome::Lose => 2,
-            GameOutcome::Draw => 3,
-        };
-        let ifc = if node.data().is_fully_calculated {
-            1
-        } else {
-            0
-        };
-        let mut str = format!(
-            "[{}/{}/{}/{}/{}/{}/{};",
-            node.data().id,
-            node.data().height,
-            node.data().wins,
-            node.data().draws,
-            node.data().visits,
-            outcome,
-            ifc
-        );
-        for child_id in node.children() {
-            let child_hash = self.get_node_hash(child_id);
-            str.push_str(child_hash.as_str());
-        }
-        str.push_str("]");
-        MurMurHasher::hash(str.as_str())
     }
 
     /// Selects the most promising node to expand, using the UCB1 formula.
