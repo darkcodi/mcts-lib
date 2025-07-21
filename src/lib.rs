@@ -6,6 +6,8 @@
 
 /// Contains the `Board` trait and related enums that define the interface for a game.
 pub mod board;
+/// Contains pre-made implementations of the `Board` trait for common games.
+pub mod boards;
 /// The core module of the library, containing the `MonteCarloTreeSearch` implementation.
 pub mod mcts;
 /// Contains the `MctsNode` struct, which represents a node in the search tree.

@@ -44,9 +44,9 @@ To use this library, you need to implement the `Board` trait for your game's sta
 The library includes a Tic-Tac-Toe implementation that you can use as a reference. See `examples/tic_tac_toe.rs`.
 
 ```rust
-use mcts_lib::board::{Board, GameOutcome, Player};
+use mcts_lib::boards::tic_tac_toe::TicTacToeBoard;
 use mcts_lib::mcts::MonteCarloTreeSearch;
-use mcts_lib::random::StandardRandomGenerator;
+use mcts_lib::random::CustomNumberGenerator;
 
 // Create a new Tic-Tac-Toe board
 let board = TicTacToeBoard::default();
@@ -54,7 +54,7 @@ let board = TicTacToeBoard::default();
 // Create a new MCTS search instance
 let mut mcts = MonteCarloTreeSearch::builder(board)
     .with_alpha_beta_pruning(false)
-    .with_random_generator(StandardRandomGenerator::default())
+    .with_random_generator(CustomNumberGenerator::default())
     .build();
 
 // Run the search for 20,000 iterations

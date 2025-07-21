@@ -277,7 +277,8 @@ impl<T: Board, K: RandomGenerator> MonteCarloTreeSearch<T, K> {
             let mut all_possible_moves = board.get_available_moves();
 
             while !all_possible_moves.is_empty() {
-                let random_move_index = self.random.next_range(0, all_possible_moves.len() as i32) as usize;
+                let random_move_index =
+                    self.random.next_range(0, all_possible_moves.len() as i32) as usize;
                 let random_move = all_possible_moves.get(random_move_index).unwrap();
                 let mut new_board = board.clone();
                 new_board.perform_move(random_move);
