@@ -36,7 +36,7 @@ impl RandomGenerator for StandardRandomGenerator {
     }
 
     fn next_range(&mut self, from: i32, to: i32) -> i32 {
-        rand::thread_rng().gen_range(from..to)
+        rand::rng().random_range(from..to)
     }
 }
 

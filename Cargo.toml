@@ -20,5 +20,4 @@ categories = [
 
 [dependencies]
 id_tree = "1.8"
-rand = "0.8"
-uuid = "1.5"
+rand = "0.9"
