@@ -1,6 +1,6 @@
 use crate::board::{Board, Bound, GameOutcome, Player};
 use crate::mcts_node::MctsNode;
-use crate::random::RandomGenerator;
+use crate::random::{RandomGenerator, StandardRandomGenerator};
 use id_tree::InsertBehavior::{AsRoot, UnderNode};
 use id_tree::{Node, NodeId, Tree, TreeBuilder};
 use std::borrow::Borrow;
@@ -433,6 +433,12 @@ impl<T: Board, K: RandomGenerator> MonteCarloTreeSearch<T, K> {
                 + EXPLORATION_PARAMETER
                     * f64::sqrt(f64::ln(total_visits as f64) / (node_visit as f64))
         }
+    }
+}
+
+impl<T: Board> MonteCarloTreeSearch<T, StandardRandomGenerator> {
+    pub fn from_board(board: T) -> Self {
+        MonteCarloTreeSearchBuilder::new(board).build()
     }
 }
 

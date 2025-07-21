@@ -1,5 +1,41 @@
-use crate::board::{Board, GameOutcome, Player};
+extern crate mcts_lib;
+
+use mcts_lib::board::{Board, GameOutcome, Player};
+use mcts_lib::mcts::MonteCarloTreeSearch;
+use mcts_lib::random::StandardRandomGenerator;
 use std::fmt::Debug;
+
+fn main() {
+    // Create a new Tic-Tac-Toe board
+    let board = TicTacToeBoard::default();
+
+    // Create a new MCTS search instance
+    let mut mcts = MonteCarloTreeSearch::builder(board)
+        .with_alpha_beta_pruning(false)
+        .with_random_generator(StandardRandomGenerator::default())
+        .build();
+
+    // Run the search for 20,000 iterations
+    mcts.iterate_n_times(20000);
+
+    // Print the chances
+    let tree = mcts.get_tree();
+    let root = mcts.get_root();
+    for node_id in root.children() {
+        let node = tree.get(node_id).unwrap();
+        println!(
+            "Move: {:?} = {:.2?}%",
+            node.data().prev_move,
+            node.data().wins_rate() * 100.0
+        );
+    }
+
+    // Get the most promising move
+    let best_move_node = mcts.get_most_perspective_move();
+    let best_move = best_move_node.data().prev_move;
+
+    println!("The best move is: {:?}", best_move);
+}
 
 /// An implementation of the `Board` trait for the game of Tic-Tac-Toe.
 ///
@@ -140,9 +176,9 @@ enum TTTPlayer {
 
 #[cfg(test)]
 mod tests {
-    use crate::boards::tic_tac_toe::TicTacToeBoard;
-    use crate::mcts::{DEFAULT_NODE_CAPACITY, MonteCarloTreeSearch};
-    use crate::random::CustomNumberGenerator;
+    use crate::TicTacToeBoard;
+    use mcts_lib::mcts::{DEFAULT_NODE_CAPACITY, MonteCarloTreeSearch};
+    use mcts_lib::random::CustomNumberGenerator;
 
     #[test]
     fn test1_usual() {
@@ -209,32 +245,5 @@ mod tests {
         assert_eq!(root.draws, 10342);
         assert_eq!(root.visits, 37432);
         assert!(root.is_fully_calculated);
-    }
-
-    #[test]
-    fn test5_change_root() {
-        // arrange
-        let board = TicTacToeBoard::default();
-        let _mcts = MonteCarloTreeSearch::builder(board)
-            .with_random_generator(CustomNumberGenerator::default())
-            .with_node_capacity(DEFAULT_NODE_CAPACITY)
-            .build();
-
-        // // act
-        // mcts.iterate_n_times(5000);
-        // mcts.change_root(mcts.get_most_perspective_move().id);
-        // mcts.iterate_n_times(5000);
-        // mcts.change_root(mcts.get_least_perspective_move().id);
-        // mcts.iterate_n_times(5000);
-        //
-        // // assert
-        // let best_node = &mcts.get_most_perspective_move().data;
-        // assert_eq!(best_node.prev_move.unwrap(), 4);
-        // let root = &mcts.get_root().data;
-        // assert_eq!(root.wins, 18225);
-        // assert_eq!(root.draws, 10342);
-        // assert_eq!(root.visits, 37432);
-        // assert!(root.is_fully_calculated);
-        // assert_eq!(mcts.get_tree_hash().as_str(), "9c7aa29b5a0ecdd4e5b4cdc14ff41237");
     }
 }

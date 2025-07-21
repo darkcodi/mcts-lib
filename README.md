@@ -16,10 +16,6 @@ This library provides a generic implementation of the Monte Carlo Tree Search (M
 
 ## Getting Started
 
-### Prerequisites
-
--   [Rust](https://www.rust-lang.org/tools/install)
-
 ### Installation
 
 Add this to your `Cargo.toml`:
@@ -45,25 +41,36 @@ To use this library, you need to implement the `Board` trait for your game's sta
 
 ### Example: Tic-Tac-Toe
 
-The library includes a Tic-Tac-Toe implementation that you can use as a reference. See `src/boards/tic_tac_toe.rs`.
+The library includes a Tic-Tac-Toe implementation that you can use as a reference. See `examples/tic_tac_toe.rs`.
 
 ```rust
-use mcts_lib::mcts::{MonteCarloTreeSearch, DEFAULT_NODE_CAPACITY};
-use mcts_lib::boards::tic_tac_toe::TicTacToeBoard;
-use mcts_lib::random::CustomNumberGenerator;
+use mcts_lib::board::{Board, GameOutcome, Player};
+use mcts_lib::mcts::MonteCarloTreeSearch;
+use mcts_lib::random::StandardRandomGenerator;
 
 // Create a new Tic-Tac-Toe board
 let board = TicTacToeBoard::default();
 
-// Create and configure a new MCTS search instance using the builder
+// Create a new MCTS search instance
 let mut mcts = MonteCarloTreeSearch::builder(board)
-    .with_random_generator(CustomNumberGenerator::default())
-    .with_node_capacity(DEFAULT_NODE_CAPACITY)
-    .with_alpha_beta_pruning(true)
+    .with_alpha_beta_pruning(false)
+    .with_random_generator(StandardRandomGenerator::default())
     .build();
 
 // Run the search for 20,000 iterations
 mcts.iterate_n_times(20000);
+
+// Print the chances
+let tree = mcts.get_tree();
+let root = mcts.get_root();
+for node_id in root.children() {
+    let node = tree.get(node_id).unwrap();
+    println!(
+        "Move: {:?} = {:.2?}%",
+        node.data().prev_move,
+        node.data().wins_rate() * 100.0
+    );
+}
 
 // Get the most promising move
 let best_move_node = mcts.get_most_perspective_move();
