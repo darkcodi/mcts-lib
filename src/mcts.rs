@@ -1,10 +1,9 @@
 use crate::board::{Board, Bound, GameOutcome, Player};
 use crate::mcts_node::MctsNode;
 use crate::random::{RandomGenerator, StandardRandomGenerator};
-use id_tree::InsertBehavior::{AsRoot, UnderNode};
-use id_tree::{Node, NodeId, Tree, TreeBuilder};
-use std::borrow::Borrow;
+use ego_tree::{NodeId, NodeRef, Tree};
 use std::collections::HashSet;
+use std::ops::{Deref, DerefMut};
 
 /// The main struct for running the Monte Carlo Tree Search algorithm.
 ///
@@ -68,10 +67,9 @@ impl<T: Board, K: RandomGenerator> MonteCarloTreeSearch<T, K> {
     ///
     /// It is recommended to use the builder pattern via `MonteCarloTreeSearch::builder()` instead.
     pub fn new(board: T, rg: K, use_alpha_beta_pruning: bool) -> Self {
-        let mut tree: Tree<MctsNode<T>> = TreeBuilder::new().build();
         let root_mcts_node = MctsNode::new(0, Box::new(board));
-        let root_id = tree.insert(Node::new(root_mcts_node), AsRoot).unwrap();
-        tree.get_mut(&root_id).unwrap().data_mut().tree_node_id = Some(root_id.clone());
+        let tree: Tree<MctsNode<T>> = Tree::new(root_mcts_node);
+        let root_id = tree.root().id();
 
         Self {
             tree,
@@ -99,25 +97,25 @@ impl<T: Board, K: RandomGenerator> MonteCarloTreeSearch<T, K> {
     pub fn execute_action(&mut self) {
         match self.next_action.clone() {
             MctsAction::Selection { R, RP: _cr } => {
-                let maybe_selected_node = self.select_next_node(&R);
+                let maybe_selected_node = self.select_next_node(R);
                 self.next_action = match maybe_selected_node {
                     None => MctsAction::EverythingIsCalculated,
                     Some(selected_node) => MctsAction::Expansion { L: selected_node },
                 };
             }
             MctsAction::Expansion { L } => {
-                let (children, selected_child) = self.expand_node(&L);
+                let (children, selected_child) = self.expand_node(L);
                 self.next_action = MctsAction::Simulation {
                     C: selected_child,
                     AC: children,
                 };
             }
             MctsAction::Simulation { C, AC: _ac } => {
-                let outcome = self.simulate(&C);
+                let outcome = self.simulate(C);
                 self.next_action = MctsAction::Backpropagation { C, result: outcome };
             }
             MctsAction::Backpropagation { C, result } => {
-                let affected_nodes = self.backpropagate(&C, result);
+                let affected_nodes = self.backpropagate(C, result);
                 self.next_action = MctsAction::Selection {
                     R: self.root_id.clone(),
                     RP: affected_nodes,
@@ -156,65 +154,32 @@ impl<T: Board, K: RandomGenerator> MonteCarloTreeSearch<T, K> {
     }
 
     /// Returns a reference to the root node of the search tree.
-    pub fn get_root(&self) -> &Node<MctsNode<T>> {
-        let root = self.tree.get(self.root_id.borrow()).unwrap();
-        root
-    }
-
-    /// Returns a tree id to the root node of the search tree.
-    pub fn root_id(&self) -> NodeId {
-        self.root_id.clone()
-    }
-
-    /// Returns the child of the root node that is considered the most promising, based on win rate.
-    pub fn get_most_perspective_move(&self) -> &Node<MctsNode<T>> {
-        self.get_most_perspective_move_for_node(self.root_id.clone())
-    }
-
-    /// Returns the child of the given node that is considered the most promising, based on win rate.
-    pub fn get_most_perspective_move_for_node(&self, node_id: NodeId) -> &Node<MctsNode<T>> {
-        let root = self.tree.get(&node_id).unwrap();
-        let mut max_win_rate = 0.0;
-        let mut best_node = root;
-        for node_id in root.children() {
-            let node = self.tree.get(node_id).unwrap();
-            let node_win_rate = node.data().wins_rate();
-            if node_win_rate > max_win_rate {
-                max_win_rate = node_win_rate;
-                best_node = node;
-            }
-        }
-
-        best_node
-    }
-
-    /// Returns the node with the given id.
-    pub fn get_node_by_id(&self, node_id: &NodeId) -> &Node<MctsNode<T>> {
-        self.tree.get(node_id).unwrap()
+    pub fn get_root(&self) -> MctsTreeNode<T> {
+        let root = self.tree.root();
+        root.into()
     }
 
     /// Selects the most promising node to expand, using the UCB1 formula.
-    fn select_next_node(&self, root_id: &NodeId) -> Option<NodeId> {
-        let mut promising_node_id = &root_id.clone();
+    fn select_next_node(&self, root_id: NodeId) -> Option<NodeId> {
+        let mut promising_node_id = root_id.clone();
         let mut has_changed = false;
         loop {
-            let mut best_child_id: Option<&NodeId> = None;
+            let mut best_child_id: Option<NodeId> = None;
             let mut max_ucb = f64::MIN;
             let node = self.tree.get(promising_node_id).unwrap();
-            for child_id in node.children() {
-                let child = self.tree.get(child_id).unwrap();
-                if child.data().is_fully_calculated {
+            for child in node.children() {
+                if child.value().is_fully_calculated {
                     continue;
                 }
 
                 let current_ucb = MonteCarloTreeSearch::<T, K>::ucb_value(
-                    node.data().visits,
-                    child.data().wins,
-                    child.data().visits,
+                    node.value().visits,
+                    child.value().wins,
+                    child.value().visits,
                 );
                 if current_ucb > max_ucb {
                     max_ucb = current_ucb;
-                    best_child_id = Some(child_id);
+                    best_child_id = Some(child.id());
                 }
             }
             if best_child_id.is_none() {
@@ -227,8 +192,8 @@ impl<T: Board, K: RandomGenerator> MonteCarloTreeSearch<T, K> {
         if has_changed {
             Some(promising_node_id.clone())
         } else {
-            let root = self.tree.get(&root_id.clone()).unwrap();
-            if root.children().is_empty() {
+            let root = self.tree.root();
+            if root.children().count() == 0 {
                 Some(root_id.clone())
             } else {
                 None
@@ -237,21 +202,21 @@ impl<T: Board, K: RandomGenerator> MonteCarloTreeSearch<T, K> {
     }
 
     /// Expands a leaf node by creating its children, representing all possible moves from that state.
-    fn expand_node(&mut self, node_id: &NodeId) -> (Vec<NodeId>, NodeId) {
+    fn expand_node(&mut self, node_id: NodeId) -> (Vec<NodeId>, NodeId) {
         let node = self.tree.get(node_id).unwrap();
-        if !node.children().is_empty() {
+        if !node.children().count() == 0 {
             panic!("BUG: expanding already expanded node");
         }
-        if node.data().outcome != GameOutcome::InProgress {
+        if node.value().outcome != GameOutcome::InProgress {
             return (vec![], node_id.clone());
         }
 
-        let children_height = node.data().height + 1;
-        let all_possible_moves = node.data().board.get_available_moves();
+        let children_height = node.value().height + 1;
+        let all_possible_moves = node.value().board.get_available_moves();
         let mut new_mcts_nodes = Vec::with_capacity(all_possible_moves.len());
 
         for possible_move in all_possible_moves {
-            let mut board_clone = node.data().board.clone();
+            let mut board_clone = node.value().board.clone();
             board_clone.perform_move(&possible_move);
             let new_node_id = self.random.next();
             let mut mcts_node = MctsNode::new(new_node_id, board_clone);
@@ -262,24 +227,21 @@ impl<T: Board, K: RandomGenerator> MonteCarloTreeSearch<T, K> {
 
         let mut new_node_ids = Vec::with_capacity(new_mcts_nodes.len());
         for mcts_node in new_mcts_nodes {
-            let node_id = self
-                .tree
-                .insert(Node::new(mcts_node), UnderNode(node_id))
-                .unwrap();
+            let mut node = self.tree.get_mut(node_id).unwrap();
+            node.append(mcts_node);
             new_node_ids.push(node_id.clone());
-            self.tree.get_mut(&node_id).unwrap().data_mut().tree_node_id = Some(node_id.clone());
         }
 
-        let children = self.tree.get(node_id).unwrap().children();
+        let children: Vec<_> = self.tree.get(node_id).unwrap().children().collect();
         let selected_child_index = self.random.next_range(0, children.len() as i32) as usize;
-        let selected_child = children[selected_child_index].clone();
+        let selected_child = children[selected_child_index].id();
         (new_node_ids, selected_child)
     }
 
     /// Simulates a random playout from a given node until the game ends.
-    fn simulate(&mut self, node_id: &NodeId) -> GameOutcome {
+    fn simulate(&mut self, node_id: NodeId) -> GameOutcome {
         let node = self.tree.get(node_id).unwrap();
-        let mut board = node.data().board.clone();
+        let mut board = node.value().board.clone();
         let mut outcome = board.get_outcome();
         let mut visited_states = HashSet::new();
         visited_states.insert(board.get_hash());
@@ -314,27 +276,25 @@ impl<T: Board, K: RandomGenerator> MonteCarloTreeSearch<T, K> {
     }
 
     /// Propagates the result of a simulation back up the tree, updating node statistics.
-    fn backpropagate(&mut self, node_id: &NodeId, outcome: GameOutcome) -> Vec<NodeId> {
+    fn backpropagate(&mut self, node_id: NodeId, outcome: GameOutcome) -> Vec<NodeId> {
         let mut branch = vec![node_id.clone()];
 
         loop {
-            let temp_node = self.tree.get(branch.last().unwrap()).unwrap();
-            let parent = temp_node.parent();
-            if parent.is_none() {
-                break;
+            let temp_node = self.tree.get(*branch.last().unwrap()).unwrap();
+            match temp_node.parent() {
+                None => break,
+                Some(parent) => branch.push(parent.id()),
             }
-
-            branch.push(parent.unwrap().clone());
         }
 
         let is_win = outcome == GameOutcome::Win;
         let is_draw = outcome == GameOutcome::Draw;
 
         for node_id in &branch {
-            let bound = self.get_bound(node_id);
-            let is_fully_calculated = self.is_fully_calculated(node_id, bound);
-            let temp_node = self.tree.get_mut(node_id).unwrap();
-            let mcts_node = temp_node.data_mut();
+            let bound = self.get_bound(*node_id);
+            let is_fully_calculated = self.is_fully_calculated(*node_id, bound);
+            let mut temp_node = self.tree.get_mut(*node_id).unwrap();
+            let mcts_node = temp_node.value();
             mcts_node.visits += 1;
             if is_win {
                 mcts_node.wins += 1;
@@ -357,13 +317,13 @@ impl<T: Board, K: RandomGenerator> MonteCarloTreeSearch<T, K> {
     }
 
     /// Determines the bound of a node for alpha-beta pruning.
-    fn get_bound(&self, node_id: &NodeId) -> Bound {
+    fn get_bound(&self, node_id: NodeId) -> Bound {
         if !self.use_alpha_beta_pruning {
             return Bound::None;
         }
 
         let node = self.tree.get(node_id).unwrap();
-        let mcts_node = node.data();
+        let mcts_node = node.value();
         if mcts_node.bound != Bound::None {
             return mcts_node.bound;
         }
@@ -376,42 +336,26 @@ impl<T: Board, K: RandomGenerator> MonteCarloTreeSearch<T, K> {
             return Bound::DefoLose;
         }
 
-        if node.children().is_empty() {
+        if node.children().count() == 0 {
             return Bound::None;
         }
 
         match mcts_node.current_player {
             Player::Me => {
-                if node
-                    .children()
-                    .iter()
-                    .all(|x| self.tree.get(x).unwrap().data().bound == Bound::DefoLose)
-                {
+                if node.children().all(|x| x.value().bound == Bound::DefoLose) {
                     return Bound::DefoLose;
                 }
 
-                if node
-                    .children()
-                    .iter()
-                    .any(|x| self.tree.get(x).unwrap().data().bound == Bound::DefoWin)
-                {
+                if node.children().any(|x| x.value().bound == Bound::DefoWin) {
                     return Bound::DefoWin;
                 }
             }
             Player::Other => {
-                if node
-                    .children()
-                    .iter()
-                    .all(|x| self.tree.get(x).unwrap().data().bound == Bound::DefoWin)
-                {
+                if node.children().all(|x| x.value().bound == Bound::DefoWin) {
                     return Bound::DefoWin;
                 }
 
-                if node
-                    .children()
-                    .iter()
-                    .any(|x| self.tree.get(x).unwrap().data().bound == Bound::DefoLose)
-                {
+                if node.children().any(|x| x.value().bound == Bound::DefoLose) {
                     return Bound::DefoLose;
                 }
             }
@@ -421,24 +365,21 @@ impl<T: Board, K: RandomGenerator> MonteCarloTreeSearch<T, K> {
     }
 
     /// Checks if a node can be considered fully calculated, meaning its outcome is certain.
-    fn is_fully_calculated(&self, node_id: &NodeId, bound: Bound) -> bool {
+    fn is_fully_calculated(&self, node_id: NodeId, bound: Bound) -> bool {
         if bound != Bound::None {
             return true;
         }
 
         let node = self.tree.get(node_id).unwrap();
-        if node.data().outcome != GameOutcome::InProgress {
+        if node.value().outcome != GameOutcome::InProgress {
             return true;
         }
 
-        if node.children().is_empty() {
+        if node.children().count() == 0 {
             return false;
         }
 
-        let all_children_calculated = node
-            .children()
-            .iter()
-            .all(|x| self.tree.get(x).unwrap().data().is_fully_calculated);
+        let all_children_calculated = node.children().all(|x| x.value().is_fully_calculated);
 
         all_children_calculated
     }
@@ -509,5 +450,49 @@ impl MctsAction {
             MctsAction::Backpropagation { C: _, result: _ } => "Backpropagation".to_string(),
             MctsAction::EverythingIsCalculated => "EverythingIsCalculated".to_string(),
         }
+    }
+}
+
+pub struct MctsTreeNode<'a, T: Board>(pub NodeRef<'a, MctsNode<T>>);
+
+impl<'a, T: Board> Deref for MctsTreeNode<'a, T> {
+    type Target = NodeRef<'a, MctsNode<T>>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl<'a, T: Board> DerefMut for MctsTreeNode<'a, T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+impl<'a, T: Board> Into<NodeRef<'a, MctsNode<T>>> for MctsTreeNode<'a, T> {
+    fn into(self) -> NodeRef<'a, MctsNode<T>> {
+        self.0
+    }
+}
+
+impl<'a, T: Board> From<NodeRef<'a, MctsNode<T>>> for MctsTreeNode<'a, T> {
+    fn from(node: NodeRef<'a, MctsNode<T>>) -> Self {
+        Self(node)
+    }
+}
+
+impl<'a, T: Board> MctsTreeNode<'a, T> {
+    /// Returns the child of the given node that is considered the most promising, based on win rate.
+    pub fn get_best_child(&self) -> Option<MctsTreeNode<'a, T>> {
+        let mut best_child = None;
+        let mut best_child_value = f64::MIN;
+        for child in self.children() {
+            let child_value = child.value().wins_rate();
+            if child_value > best_child_value {
+                best_child = Some(child);
+                best_child_value = child_value;
+            }
+        }
+        best_child.map(|x| x.into())
     }
 }

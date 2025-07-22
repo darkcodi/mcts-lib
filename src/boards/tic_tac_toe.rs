@@ -157,9 +157,9 @@ mod tests {
         mcts.iterate_n_times(20000);
 
         // assert
-        let best_node = &mcts.get_most_perspective_move().data();
+        let best_node = &mcts.get_root().get_best_child().unwrap().value();
         assert_eq!(best_node.prev_move.unwrap(), 4);
-        let root = &mcts.get_root().data();
+        let root = &mcts.get_root().value();
         assert_eq!(root.wins, 13867);
         assert_eq!(root.draws, 2104);
         assert_eq!(root.visits, 20000);
@@ -178,9 +178,9 @@ mod tests {
         mcts.iterate_n_times(20000);
 
         // assert
-        let best_node = &mcts.get_most_perspective_move().data();
+        let best_node = &mcts.get_root().get_best_child().unwrap().value();
         assert_eq!(best_node.prev_move.unwrap(), 4);
-        let root = &mcts.get_root().data();
+        let root = &mcts.get_root().value();
         assert_eq!(root.wins, 10758);
         assert_eq!(root.draws, 3808);
         assert_eq!(root.visits, 20000);
@@ -199,9 +199,9 @@ mod tests {
         mcts.iterate_n_times(50000);
 
         // assert
-        let best_node = &mcts.get_most_perspective_move().data();
+        let best_node = &mcts.get_root().get_best_child().unwrap().value();
         assert_eq!(best_node.prev_move.unwrap(), 4);
-        let root = &mcts.get_root().data();
+        let root = &mcts.get_root().value();
         assert_eq!(root.wins, 18225);
         assert_eq!(root.draws, 10342);
         assert_eq!(root.visits, 37432);

@@ -18,20 +18,18 @@ fn main() {
     mcts.iterate_n_times(20000);
 
     // Print the chances
-    let tree = mcts.get_tree();
     let root = mcts.get_root();
-    for node_id in root.children() {
-        let node = tree.get(node_id).unwrap();
+    for node in root.children() {
         println!(
             "Move: {:?} = {:.2?}%",
-            node.data().prev_move,
-            node.data().wins_rate() * 100.0
+            node.value().prev_move,
+            node.value().wins_rate() * 100.0
         );
     }
 
     // Get the most promising move
-    let best_move_node = mcts.get_most_perspective_move();
-    let best_move = best_move_node.data().prev_move;
+    let best_move_node = root.get_best_child().unwrap();
+    let best_move = best_move_node.value().prev_move;
 
     println!("The best move is: {:?}", best_move);
     assert_eq!(best_move, Some(4));
