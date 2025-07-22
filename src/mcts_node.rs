@@ -4,6 +4,7 @@ use crate::board::{Board, Bound, GameOutcome, Player};
 ///
 /// Each node stores the state of the game, statistics about the outcomes of simulations,
 /// and information about the move that led to this state.
+#[derive(Debug, Clone)]
 pub struct MctsNode<T: Board> {
     /// A unique identifier for the node.
     pub id: i32,
@@ -71,5 +72,19 @@ impl<T: Board> MctsNode<T> {
         } else {
             (self.draws as f64) / (self.visits as f64)
         }
+    }
+}
+
+impl<T: Board> PartialEq<Self> for MctsNode<T> {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id
+    }
+}
+
+impl<T: Board> Eq for MctsNode<T> {}
+
+impl<T: Board> std::hash::Hash for MctsNode<T> {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.id.hash(state);
     }
 }

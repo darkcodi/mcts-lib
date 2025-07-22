@@ -24,7 +24,7 @@ pub trait Board: Default + Clone {
 }
 
 /// Represents the possible outcomes of a game.
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Debug, PartialEq, Eq, Hash, Copy, Clone)]
 pub enum GameOutcome {
     /// The game is still ongoing.
     InProgress = 0,
@@ -37,7 +37,7 @@ pub enum GameOutcome {
 }
 
 /// Represents the players in the game from the perspective of the MCTS search.
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Debug, PartialEq, Eq, Hash, Copy, Clone)]
 pub enum Player {
     /// The player for whom the MCTS is currently searching for the best move.
     Me = 1,
@@ -46,7 +46,7 @@ pub enum Player {
 }
 
 /// Used for alpha-beta pruning to mark nodes as having a definite outcome.
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Debug, PartialEq, Eq, Hash, Copy, Clone)]
 pub enum Bound {
     /// The outcome of the node is not yet determined.
     None = 0,
