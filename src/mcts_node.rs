@@ -1,3 +1,4 @@
+use id_tree::NodeId;
 use crate::board::{Board, Bound, GameOutcome, Player};
 
 /// Represents a single node in the Monte Carlo search tree.
@@ -28,6 +29,8 @@ pub struct MctsNode<T: Board> {
     pub bound: Bound,
     /// A flag indicating whether the outcome of this node is definitively known.
     pub is_fully_calculated: bool,
+    /// The ID of this tree node
+    pub tree_node_id: Option<NodeId>,
 }
 
 impl<T: Board> MctsNode<T> {
@@ -47,6 +50,7 @@ impl<T: Board> MctsNode<T> {
             draws: 0,
             bound: Bound::None,
             is_fully_calculated: false,
+            tree_node_id: None,
         }
     }
 

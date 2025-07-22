@@ -71,6 +71,7 @@ impl<T: Board, K: RandomGenerator> MonteCarloTreeSearch<T, K> {
         let mut tree: Tree<MctsNode<T>> = TreeBuilder::new().build();
         let root_mcts_node = MctsNode::new(0, Box::new(board));
         let root_id = tree.insert(Node::new(root_mcts_node), AsRoot).unwrap();
+        tree.get_mut(&root_id).unwrap().data_mut().tree_node_id = Some(root_id.clone());
 
         Self {
             tree,
@@ -260,7 +261,8 @@ impl<T: Board, K: RandomGenerator> MonteCarloTreeSearch<T, K> {
                 .tree
                 .insert(Node::new(mcts_node), UnderNode(node_id))
                 .unwrap();
-            new_node_ids.push(node_id);
+            new_node_ids.push(node_id.clone());
+            self.tree.get_mut(&node_id).unwrap().data_mut().tree_node_id = Some(node_id.clone());
         }
 
         let children = self.tree.get(node_id).unwrap().children();
