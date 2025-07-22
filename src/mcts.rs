@@ -166,6 +166,11 @@ impl<T: Board, K: RandomGenerator> MonteCarloTreeSearch<T, K> {
         root
     }
 
+    /// Returns a tree id to the root node of the search tree.
+    pub fn root_id(&self) -> NodeId {
+        self.root_id.clone()
+    }
+
     /// Returns the child of the root node that is considered the most promising, based on win rate.
     pub fn get_most_perspective_move(&self) -> &Node<MctsNode<T>> {
         self.get_most_perspective_move_for_node(self.root_id.clone())
