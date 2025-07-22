@@ -168,7 +168,12 @@ impl<T: Board, K: RandomGenerator> MonteCarloTreeSearch<T, K> {
 
     /// Returns the child of the root node that is considered the most promising, based on win rate.
     pub fn get_most_perspective_move(&self) -> &Node<MctsNode<T>> {
-        let root = self.tree.get(self.root_id.borrow()).unwrap();
+        self.get_most_perspective_move_for_node(self.root_id.clone())
+    }
+
+    /// Returns the child of the given node that is considered the most promising, based on win rate.
+    pub fn get_most_perspective_move_for_node(&self, node_id: NodeId) -> &Node<MctsNode<T>> {
+        let root = self.tree.get(&node_id).unwrap();
         let mut max_win_rate = 0.0;
         let mut best_node = root;
         for node_id in root.children() {
