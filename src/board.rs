@@ -2,7 +2,7 @@
 ///
 /// To use the MCTS algorithm with a custom game, this trait must be implemented.
 /// It provides the MCTS engine with the necessary methods to understand and interact with the game logic.
-pub trait Board: Default + Clone {
+pub trait Board: Clone {
     /// The type representing a move in the game. This could be a simple `u8` for a board position
     /// or a more complex struct for games with intricate actions.
     type Move;

@@ -30,12 +30,6 @@ pub struct MctsNode<T: Board> {
     pub is_fully_calculated: bool,
 }
 
-impl<T: Board> Default for MctsNode<T> {
-    fn default() -> Self {
-        MctsNode::new(0, Box::new(T::default()))
-    }
-}
-
 impl<T: Board> MctsNode<T> {
     /// Creates a new `MctsNode` with the given ID and board state.
     pub fn new(id: i32, boxed_board: Box<T>) -> Self {

@@ -17,12 +17,6 @@ pub struct MonteCarloTreeSearch<T: Board, K: RandomGenerator> {
     next_action: MctsAction,
 }
 
-impl<T: Board, K: RandomGenerator> Default for MonteCarloTreeSearch<T, K> {
-    fn default() -> Self {
-        MonteCarloTreeSearchBuilder::new(T::default()).build()
-    }
-}
-
 /// A builder for creating instances of `MonteCarloTreeSearch`.
 ///
 /// This provides a convenient way to configure the MCTS search with different parameters.
