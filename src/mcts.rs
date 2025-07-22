@@ -486,6 +486,24 @@ impl<'a, T: Board> MctsTreeNode<'a, T> {
     pub fn get_best_child(&self) -> Option<MctsTreeNode<'a, T>> {
         let mut best_child = None;
         let mut best_child_value = f64::MIN;
+
+        // get the best child amount with DefoWin bound
+        for child in self
+            .children()
+            .filter(|x| x.value().bound == Bound::DefoWin)
+        {
+            let child_value = child.value().wins_rate();
+            if child_value > best_child_value {
+                best_child = Some(child);
+                best_child_value = child_value;
+            }
+        }
+
+        if best_child.is_some() {
+            return best_child.map(|x| x.into());
+        }
+
+        // get the best child overall
         for child in self.children() {
             let child_value = child.value().wins_rate();
             if child_value > best_child_value {
@@ -493,6 +511,7 @@ impl<'a, T: Board> MctsTreeNode<'a, T> {
                 best_child_value = child_value;
             }
         }
+
         best_child.map(|x| x.into())
     }
 }

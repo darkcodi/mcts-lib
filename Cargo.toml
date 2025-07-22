@@ -1,6 +1,6 @@
 [package]
 name = "mcts-lib"
-version = "0.3.0"
+version = "0.3.1"
 authors = ["Ivan Yaremenchuk <trooper982@gmail.com>"]
 edition = "2024"
 description = "A small and simple library for Monte Carlo tree search"
