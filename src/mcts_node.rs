@@ -1,5 +1,5 @@
-use id_tree::NodeId;
 use crate::board::{Board, Bound, GameOutcome, Player};
+use id_tree::NodeId;
 
 /// Represents a single node in the Monte Carlo search tree.
 ///

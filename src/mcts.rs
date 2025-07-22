@@ -188,6 +188,11 @@ impl<T: Board, K: RandomGenerator> MonteCarloTreeSearch<T, K> {
         best_node
     }
 
+    /// Returns the node with the given id.
+    pub fn get_node_by_id(&self, node_id: &NodeId) -> &Node<MctsNode<T>> {
+        self.tree.get(node_id).unwrap()
+    }
+
     /// Selects the most promising node to expand, using the UCB1 formula.
     fn select_next_node(&self, root_id: &NodeId) -> Option<NodeId> {
         let mut promising_node_id = &root_id.clone();

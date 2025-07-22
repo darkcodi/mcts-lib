@@ -16,15 +16,6 @@ This library provides a generic implementation of the Monte Carlo Tree Search (M
 
 ## Getting Started
 
-### Installation
-
-Add this to your `Cargo.toml`:
-
-```toml
-[dependencies]
-mcts-lib = "0.1.0"
-```
-
 ## Usage
 
 To use this library, you need to implement the `Board` trait for your game's state representation. Here's a high-level overview of the steps:
